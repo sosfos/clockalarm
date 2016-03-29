@@ -1,0 +1,97 @@
+#:import AnchorLayout kivy.uix.anchorlayout.AnchorLayout
+#:import BoxLayout kivy.uix.boxlayout.BoxLayout
+#:import Label kivy.uix.label.Label
+#:import RelativeLayout kivy.uix.relativelayout.RelativeLayout
+#:import Widget kivy.uix.widget.Widget
+
+
+<AlarmLeft@BoxLayout>:
+    alarm_image:_alarm_image
+    alarm_label:_alarm_label
+
+    size_hint:None,None
+    height:40
+    
+    on_touch_down:app.alarm_touch_down(self.id)
+    AnchorLayout:
+        anchor_x:'left'
+        anchor_y:'center'
+        Image:
+            id:_alarm_image
+            source:'alarm.png'
+            size_hint:None,None
+            height:40
+            width:40
+            y:root.y + (root.height - self.height)/2
+    AnchorLayout:
+        anchor_x:'left'
+        anchor_y:'center'
+        Label:
+            id:_alarm_label
+            text:'00:00'
+            size_hint:None,None
+            height:40
+            width:40
+
+<AlarmRight@BoxLayout>:
+    alarm_image:_alarm_image
+    alarm_label:_alarm_label
+
+    size_hint:None,None
+    height:40
+    
+    on_touch_down:app.alarm_touch_down(self.id)
+    AnchorLayout:
+        anchor_x:'right'
+        anchor_y:'center'
+        Label:
+            id:_alarm_label
+            text:'00:00'
+            size_hint:None,None
+            height:40
+            width:40
+            
+    AnchorLayout:
+        anchor_x:'right'
+        anchor_y:'center'
+        Image:
+            id:_alarm_image
+            source:'alarm.png'
+            size_hint:None,None
+            height:40
+            width:40
+            y:root.y + (root.height - self.height)/2
+            
+<Clock@Label>:
+    text:'00:00'
+    font_size:300
+    size_hint:None,None
+    height:40
+    width:80
+
+
+<ClockWidget@RelativeLayout>:
+    AlarmLeft:
+        id:'1'
+        x:0
+        y:root.height - self.height
+    AlarmLeft:
+        id:'2'
+        x:0
+        y:0
+    AlarmRight:
+        id:'3'
+        x:root.width - self.width
+        y:root.height - self.height
+    AlarmRight:
+        id:'4'
+        x:root.width - self.width
+        y:0
+    
+    Clock:
+        id:_clock
+        x:(root.width - self.width)/2
+        y:(root.height - self.height)/2
+        
+        
+ClockWidget:
