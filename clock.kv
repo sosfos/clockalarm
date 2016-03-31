@@ -4,94 +4,107 @@
 #:import RelativeLayout kivy.uix.relativelayout.RelativeLayout
 #:import Widget kivy.uix.widget.Widget
 
+<AlarmIcon@AnchorLayout>:
+    image:_alarm_image
+    anchor_x:'left'
+    anchor_y:'center'
+    Image:
+        id:_alarm_image
+        source:'alarm.svg'
+        size_hint:None,None
+        height:40
+        width:40
+        y:root.y + (root.height - self.height)/2
 
-<AlarmLeft@BoxLayout>:
-    alarm_image:_alarm_image
+<AlarmLabel@AnchorLayout>:
+    label:_alarm_label
+    anchor_x:'left'
+    anchor_y:'center'
+    Label:
+        id:_alarm_label
+        text:'__:__'
+        size_hint:None,None
+        height:40
+        width:40
+
+<AlarmWidget>:
+
+<AlarmLeft@AlarmWidget>:
+    alarm_image:_alarm_icon
     alarm_label:_alarm_label
 
     size_hint:None,None
     height:40
     
-    on_touch_down:app.alarm_touch_down(self.id)
-    AnchorLayout:
-        anchor_x:'left'
-        anchor_y:'center'
-        Image:
-            id:_alarm_image
-            source:'alarm.png'
-            size_hint:None,None
-            height:40
-            width:40
-            y:root.y + (root.height - self.height)/2
-    AnchorLayout:
-        anchor_x:'left'
-        anchor_y:'center'
-        Label:
-            id:_alarm_label
-            text:'00:00'
-            size_hint:None,None
-            height:40
-            width:40
+    AlarmIcon:
+        id:_alarm_icon
+    AlarmLabel:
+        id:_alarm_label
+    
 
-<AlarmRight@BoxLayout>:
-    alarm_image:_alarm_image
+<AlarmRight@AlarmWidget>:
+    alarm_image:_alarm_icon
     alarm_label:_alarm_label
 
     size_hint:None,None
     height:40
-    
-    on_touch_down:app.alarm_touch_down(self.id)
-    AnchorLayout:
-        anchor_x:'right'
-        anchor_y:'center'
-        Label:
-            id:_alarm_label
-            text:'00:00'
-            size_hint:None,None
-            height:40
-            width:40
+        
+    AlarmLabel:
+        id:_alarm_label
+    AlarmIcon:
+        id:_alarm_icon
             
-    AnchorLayout:
-        anchor_x:'right'
-        anchor_y:'center'
-        Image:
-            id:_alarm_image
-            source:'alarm.png'
-            size_hint:None,None
-            height:40
-            width:40
-            y:root.y + (root.height - self.height)/2
-            
-<Clock@Label>:
-    text:'00:00'
+<NowWidget>:
+    text:''
     font_size:300
     size_hint:None,None
     height:40
     width:80
 
 
-<ClockWidget@RelativeLayout>:
+<ClockWidget>:
+    alarm_1:_a1
+    alarm_2:_a2
+    alarm_3:_a3
+    alarm_4:_a4
+    
+    opacity:0.3
     AlarmLeft:
-        id:'1'
+        id:_a1
         x:0
         y:root.height - self.height
     AlarmLeft:
-        id:'2'
+        id:_a2
         x:0
         y:0
     AlarmRight:
-        id:'3'
+        id:_a3
         x:root.width - self.width
         y:root.height - self.height
     AlarmRight:
-        id:'4'
+        id:_a4
         x:root.width - self.width
         y:0
     
-    Clock:
+    NowWidget:
         id:_clock
         x:(root.width - self.width)/2
         y:(root.height - self.height)/2
         
         
-ClockWidget:
+<AlarmEditor>:
+    input_hour:_input_hour
+    input_minute:_input_minute
+    button_ok:_button_ok
+    
+    orientation:'vertical'
+    opacity:1
+    TextInput:
+        id:_input_hour
+    TextInput:
+        id:_input_minute
+    Button:
+        id:_button_ok
+        text:'OK'
+        on_press:root.button_ok_down()
+        

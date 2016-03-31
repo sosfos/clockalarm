@@ -1,0 +1,25 @@
+On start, show splash screen
+
+Background can be pure black/white... or pictures
+
+Start --> splash screen --> main screen
+	by default will show only the current time
+	touch --> show current time and also the alarms (might need to change the opacity)
+	drag the time up or down will change the opacity of the time label
+	double click any alarms, will open dialog to edit the alarm, save will update alarm label
+	alarm editor should be able to diable the alarm (but save the value to json file)
+	turn on proximity sensor, so that when turn over the phone (front face down), will turn off screen but keep running app
+	when not touch the app for few minute, change the opacity of the app down and hide alarms
+	when touch the app, chang eopcity of the app up and show alarms
+	when alarm, icon of alarm has an animation
+
+	when alarm is not started, do as above
+	if alarm started:
+		touch will go to snooze for 5 minute (configurable)
+		exit app will end alarm
+		re-open app will read configurations and start counting but now alarm again
+		an alarm need to start during another is not stoped, the new one will not start
+		can snooze any times till close the app
+		
+	
+	
