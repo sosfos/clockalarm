@@ -16,10 +16,24 @@ Start --> splash screen --> main screen
 	when alarm is not started, do as above
 	if alarm started:
 		touch will go to snooze for 5 minute (configurable)
-		exit app will end alarm
+		exit app will end alarm, or triple click alarm to show a confirmation dialog?
 		re-open app will read configurations and start counting but now alarm again
 		an alarm need to start during another is not stoped, the new one will not start
-		can snooze any times till close the app
+		can snooze any times till close the app or click ok in the confirmation dialog
 		
 	
-	
+	store:
+	   {
+	       "alarms":
+	       {"1":
+    	       {
+    	       "time":None,
+    	       "snooze":300,
+               "volumes":[],
+               "volumes_snooze":[]
+               },
+               ...
+            },	       
+	   }
+	   
+	   

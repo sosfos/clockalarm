@@ -67,6 +67,7 @@
     alarm_2:_a2
     alarm_3:_a3
     alarm_4:_a4
+    clock:_clock
     
     opacity:0.3
     AlarmLeft:
@@ -93,18 +94,34 @@
         
         
 <AlarmEditor>:
-    input_hour:_input_hour
-    input_minute:_input_minute
+    time_picker:_time_picker
     button_ok:_button_ok
+    button_enable:_button_enable
     
     orientation:'vertical'
-    opacity:1
-    TextInput:
-        id:_input_hour
-    TextInput:
-        id:_input_minute
-    Button:
-        id:_button_ok
-        text:'OK'
-        on_press:root.button_ok_down()
+    size_hint:1,1
+    x:0
+    y:0
+
+    CircularTimePicker:
+        id:_time_picker
+        size_hint:1,1
+        
+    BoxLayout:
+        size_hint:1,None
+        height:60
+        Button:
+            text:"Cancel"
+            on_press:root.button_cancel_down()
+            
+        Switch:
+            id:_button_enable
+            text:'Enable'
+            
+        Button:
+            id:_button_ok
+            
+            text:'OK'
+            on_press:root.button_ok_down()
+        
         
