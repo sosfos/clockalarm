@@ -195,7 +195,7 @@ class ClockWidget(RelativeLayout):
         self.opacity_old = 0
         self.alarm_editor_openned = False
         self.animation_fade_out = Animation(opacity=0.4,duration=5)
-        self.animation_fade_in = Animation(opacity=0.8,duration=1)
+        self.animation_fade_in = Animation(opacity=1,duration=1)
         self.in_alarm = False
         self.current_alarm = None
         
@@ -330,9 +330,8 @@ class ClockApp(App):
     def __init__(self,**kwargs):
         super(ClockApp,self).__init__(**kwargs)
         from os.path import join
-        #self.store = JsonStore(join(self.user_data_dir,"clockalarm.json"))
-        self.store = JsonStore("clockalarm.json")
-        
+        self.store = JsonStore(join(self.user_data_dir,"clockalarm.json"))
+    
     def build(self):
         root = ClockWidget()
         
@@ -355,15 +354,15 @@ class ClockApp(App):
                 return None
         
     def set_alarm_to_store(self,id,alarm):
-        if id == "1":
-            self.store.put("alarms",a1=alarm)
-        elif id=="2":
-            self.store.put("alarms",a2=alarm)
-        elif id=="3":
-            self.store.put("alarms",a3=alarm)
-        elif id=="4":
-            self.store.put("alarms",a4=alarm)
-
+        allAlarms = {}
+        for i in range(1,5):
+            if i == int(id):
+                allAlarms["{}".format(i)]=alarm
+            else:
+                allAlarms["{}".format(i)]=app.get_alarm_from_store("{}".format(i))
+                                                       
+        self.store.put("alarms",a1=allAlarms["1"],a2=allAlarms["2"],a3=allAlarms["3"],a4=allAlarms["4"])
+        
     
 app = ClockApp()
     

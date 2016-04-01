@@ -12,8 +12,8 @@
         id:_alarm_image
         source:'alarm.png'
         size_hint:None,None
-        height:40
-        width:40
+        height:60
+        width:60
         y:root.y + (root.height - self.height)/2
 
 <AlarmLabel@AnchorLayout>:
@@ -24,17 +24,18 @@
         id:_alarm_label
         text:'__:__'
         size_hint:None,None
-        height:40
-        width:40
+        height:60
+        width:60
+        font_size:40
 
 <AlarmWidget>:
+    size_hint:None,None
+    height:80
+    width:145
 
 <AlarmLeft@AlarmWidget>:
     alarm_image:_alarm_icon
     alarm_label:_alarm_label
-
-    size_hint:None,None
-    height:40
     
     AlarmIcon:
         id:_alarm_icon
@@ -46,9 +47,6 @@
     alarm_image:_alarm_icon
     alarm_label:_alarm_label
 
-    size_hint:None,None
-    height:40
-        
     AlarmLabel:
         id:_alarm_label
     AlarmIcon:
@@ -109,7 +107,7 @@
         
     BoxLayout:
         size_hint:1,None
-        height:60
+        height:100
         Button:
             text:"Cancel"
             on_press:root.button_cancel_down()
