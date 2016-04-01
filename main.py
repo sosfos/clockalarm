@@ -14,11 +14,27 @@ from kivy.properties import ObjectProperty
 from kivy.storage.jsonstore import JsonStore
 from picker import CircularTimePicker
 from kivy.uix.button import Button
-from datetime import datetime
-import time
+from datetime import datetime,time
+import time as tt
+
+import json
 
 app = None
 
+class PopupMessage(Label):
+    def __init__(self,**kwargs):
+        super(PopupMessage,self).__init__(**kwargs)
+        
+        Clock.schedule_once(self.fade_out,2)
+        Clock.schedule_once(self.delete_self,5)
+        Animation(opacity=0.5,duration=1).start(self)
+        
+    def fade_out(self,val):
+        Animation(opacity=0,duration=2).start(self)
+        
+    def delete_self(self,val):
+        app.root.remove_widget(self)
+        
 class AlarmWidget(BoxLayout):
     alarm_time = ObjectProperty(None)
     
@@ -34,6 +50,8 @@ class AlarmWidget(BoxLayout):
         self.alarm_volumes_snooze = [0.2,0.4,0.7,1]
         self.alarm_volume_index = 0
         self.alarm.volume = self.alarm_volumes[self.alarm_volume_index]
+        self.volume_clock = None
+        self.alarm_clock = None
         
         self.alarm_time = None #time
         self.in_snooze = False
@@ -45,7 +63,8 @@ class AlarmWidget(BoxLayout):
     
         self.touch_down_time = 0
         
-    def on_alarm_time(self,instance,value):
+    def set_alarm_time(self,value):
+        self.alarm_time = value;
         self.alarm_label.label.text = value.strftime('%H:%M') if self.enabled else "__:__"
         
     def fade_out(self):
@@ -59,17 +78,17 @@ class AlarmWidget(BoxLayout):
         
         self.alarm.volume = volumes[self.alarm_volume_index]
         
-        print "Volume:{}".format(self.alarm.volume)
+        app.root.show_popup("Volume:{}".format(self.alarm.volume))
         
         if self.alarm_volume_index < len(volumes) - 1:
             self.alarm_volume_index += 1
             
             if not self.stopped:
-                Clock.schedule_once(self.update_volume,10)
+                self.volume_clock = Clock.schedule_once(self.update_volume,10)
         
     def alarm_now(self,val):
         if app.root.current_alarm is None or app.root.current_alarm.stopped:
-            print "alarm now:{}".format(datetime.now().strftime("%H:%M"))
+            app.root.show_popup("alarm now:")
             app.root.current_alarm = self
             app.root.in_alarm = True
             app.root.fade_in_self()
@@ -79,46 +98,41 @@ class AlarmWidget(BoxLayout):
             self.alarm.play()
             self.stopped = False
 
-            Clock.schedule_once(self.update_volume,10)
+            self.volume_clock = Clock.schedule_once(self.update_volume,10)
             
             #when alarm finished, change current_alarm of root widget to None
         
     def stop(self,newScheduleTime):
-        print "alarm stopped:{}".format(datetime.now().strftime("%H:%M"))
+        if (not self.stopped or self.in_snooze):
+            self.alarm_clock.cancel()
+        
         self.alarm.stop()
         self.stopped = True
         
         if newScheduleTime > 0:
-            Clock.schedule_once(self.alarm_now,newScheduleTime)
+            self.alarm_clock = Clock.schedule_once(self.alarm_now,newScheduleTime)
         elif newScheduleTime == 0:
-            schedule_alarm()
+            app.root.show_popup("alarm stopped:0")
+            self.schedule_alarm()
         elif newScheduleTime < 0:
+            app.root.show_popup("alarm stopped:<0")
             pass
-
+        
+        if self.volume_clock is not None:
+            self.volume_clock.cancel()
+        
         
     def schedule_alarm(self):
-        if self.alarm_time is not None and self.enabled:
-            now = datetime.now()
-            
-            delta = 0
-            if self.alarm_time.hour < now.hour:
-                delta = (self.alarm_time.hour + 24 - now.hour)*60 
-            else:
-                delta = (self.alarm_time.hour - now.hour)*3600
-            
-            delta += (self.alarm_time.minute - now.minute) * 60
-
-            Clock.schedule_once(self.alarm_now,delta)
-
-    def on_touch_down(self,event):
-        self.touch_down_time = time.time()
-
-    def on_touch_up(self,event):
-        now = time.time()
-        if now - self.touch_down_time > 4:
+        if not self.stopped:
             self.stop(0)
-            self.in_snooze = False
+              
+        elif self.alarm_time is not None and self.enabled:
+            now = datetime.now()
+            alarm_time = now.replace(hour=self.alarm_time.hour,minute=self.alarm_time.minute,second=self.alarm_time.second)
+                            
+            delta = (alarm_time - now).seconds
 
+            self.alarm_clock = Clock.schedule_once(self.alarm_now,delta)
 
 class NowWidget(Label):
     def __init__(self,**kwargs):
@@ -127,7 +141,6 @@ class NowWidget(Label):
         
     def update_now(self,dt):
         self.text = datetime.now().strftime('%H:%M')
-
 
 class AlarmEditor(BoxLayout):
     def edit(self,alarm):
@@ -143,9 +156,16 @@ class AlarmEditor(BoxLayout):
         else:
             self.alarm.enabled = False
 
-        self.alarm.alarm_time = self.time_picker.time
-        self.button_cancel_down()
+        self.alarm.set_alarm_time(self.time_picker.time)
         self.alarm.schedule_alarm()
+        app.set_alarm_to_store(self.alarm.id, {
+                                               "enable":1 if self.button_enable.active else 0,
+                                               "time":[self.alarm.alarm_time.hour,self.alarm.alarm_time.minute],
+                                               "snooze":300,
+                                                "alarm_volumes":[0.01,0.05,0.1,0.25,0.4,0.6,0.8,1],
+                                                "alarm_volumes_snooze":[0.2,0.4,0.7,1]
+                                               })
+        self.button_cancel_down()
         
         #self.save_alarm()
         
@@ -174,46 +194,79 @@ class ClockWidget(RelativeLayout):
         self.alarm_editor = AlarmEditor()
         self.opacity_old = 0
         self.alarm_editor_openned = False
-        self.animation_fade_out = Animation(opacity=1,duration=5)
-        self.animation_fade_in = Animation(opacity=1,duration=1)
+        self.animation_fade_out = Animation(opacity=0.4,duration=5)
+        self.animation_fade_in = Animation(opacity=0.8,duration=1)
         self.in_alarm = False
         self.current_alarm = None
         
-    def on_touch_up(self,event):
-        if event.is_touch:            
-            if event.is_double_tap:
-                #edit alarms
-                alarm = None
-                if self.alarm_1.collide_point(event.ox, event.oy):
-                    alarm = self.alarm_1
-                elif self.alarm_2.collide_point(event.ox, event.oy):
-                    alarm = self.alarm_2
-                elif self.alarm_3.collide_point(event.ox, event.oy):
-                    alarm = self.alarm_3
-                elif self.alarm_4.collide_point(event.ox, event.oy):
-                    alarm = self.alarm_4
-                elif self.clock.collide_point(event.ox,event.oy):
-                    pass
-                    #opacity = self.clock.opacity + 0.1
+        
+    def init_alarms(self):
+        for i in range(1,5):
+            info = app.get_alarm_from_store("{}".format(i))
+            alarm = eval("self.alarm_{}".format(i))
+            alarm.id="{}".format(i)
+            
+            if info is not None:   
+                alarm.enabled = True if info["enable"]  == 1 else False           
+                alarm.set_alarm_time(time(info["time"][0],info["time"][1]))
+                alarm.snooze = info["snooze"]
+                alarm.volumes = info["alarm_volumes"]
+                alarm.volumes_snooze = info["alarm_volumes_snooze"]
+            
+        
+    def on_touch_down(self,event):
+        alarm = None
+        if self.alarm_1.collide_point(event.ox, event.oy):
+            alarm = self.alarm_1
+        elif self.alarm_2.collide_point(event.ox, event.oy):
+            alarm = self.alarm_2
+        elif self.alarm_3.collide_point(event.ox, event.oy):
+            alarm = self.alarm_3
+        elif self.alarm_4.collide_point(event.ox, event.oy):
+            alarm = self.alarm_4
+            
+        if alarm is not None:
+            alarm.touch_down_time = tt.time()
+        else:
+            self.alarm_1.touch_down_time = 0
+            self.alarm_2.touch_down_time = 0
+            self.alarm_3.touch_down_time = 0
+            self.alarm_4.touch_down_time = 0
+            
+        return super(ClockWidget,self).on_touch_down(event)
+    
+    def on_touch_up(self,event):   
+        if event.is_touch:
+            alarm = None
+            if self.alarm_1.collide_point(event.ox, event.oy):
+                alarm = self.alarm_1
+            elif self.alarm_2.collide_point(event.ox, event.oy):
+                alarm = self.alarm_2
+            elif self.alarm_3.collide_point(event.ox, event.oy):
+                alarm = self.alarm_3
+            elif self.alarm_4.collide_point(event.ox, event.oy):
+                alarm = self.alarm_4
+            
+            if alarm is not None:
+                if (not alarm.stopped or alarm.in_snooze) and alarm.touch_down_time > 0 and (tt.time() - alarm.touch_down_time) > 3:
+                    alarm.stop(0)
+                    alarm.in_snooze = False
                 
-                    #if opacity > 0.8:
-                    #    opacity = 0.1
+                if event.is_double_tap:
+                    #edit alarms
+                    if self.alarm_editor_openned == False:
+                        self.opacity_old = self.opacity
+                        self.opacity = 1
+    
+                        self.hide_alarm_clock()
                         
-                    #self.clock.opacity = opacity
-
-                if alarm is not None and self.alarm_editor_openned == False:
-                    self.opacity_old = self.opacity
-                    self.opacity = 1
-
-                    self.hide_alarm_clock()
-                    
-                    self.alarm_editor.opacity = 1
-                    self.alarm_editor.edit(alarm)
-                    self.add_widget(self.alarm_editor)
-                    self.alarm_editor_openned = True
-                else:
-                    self.fade_in_alarms()
-                    self.fade_in_self()
+                        self.alarm_editor.opacity = 1
+                        self.alarm_editor.edit(alarm)
+                        self.add_widget(self.alarm_editor)
+                        self.alarm_editor_openned = True
+            
+            self.fade_in_alarms()
+            self.fade_in_self()                
 
             if self.fade_clock is not None:
                 self.fade_clock.cancel()
@@ -225,9 +278,12 @@ class ClockWidget(RelativeLayout):
                 self.alarm_fade_clock = Clock.schedule_once(self.fade_out_alarms,10)   
                 self.fade_clock = Clock.schedule_once(self.fade_out_self,180)
             elif not self.current_alarm.stopped:
-                print "snooze..."
+                self.show_popup("snooze...")
                 self.current_alarm.in_snooze = True
-                self.current_alarm.stop(300)
+                self.current_alarm.stop(self.current_alarm.snooze)
+        
+        return super(ClockWidget,self).on_touch_up(event)
+    
     
     def hide_alarm_clock(self):                    
         self.clock.opacity = 0
@@ -262,6 +318,11 @@ class ClockWidget(RelativeLayout):
         self.alarm_3.fade_out()
         self.alarm_4.fade_out()
      
+    def show_popup(self,txt):
+        print txt
+        pop = PopupMessage(text=txt)
+        self.add_widget(pop)
+        
 
 class ClockApp(App):
     clearcolor = (0,0,0,1)
@@ -269,10 +330,14 @@ class ClockApp(App):
     def __init__(self,**kwargs):
         super(ClockApp,self).__init__(**kwargs)
         from os.path import join
-        self.store = JsonStore(join(self.user_data_dir,"clockalarm.json"))
+        #self.store = JsonStore(join(self.user_data_dir,"clockalarm.json"))
+        self.store = JsonStore("clockalarm.json")
         
     def build(self):
         root = ClockWidget()
+        
+        root.init_alarms()
+        
         self.root=root
         return self.root
     
@@ -281,7 +346,24 @@ class ClockApp(App):
     
     def on_resume(self):
         pass
+    
+    def get_alarm_from_store(self,id):
+        if self.store.exists("alarms"):
+            try:
+                return self.store.get("alarms")["a{}".format(id)]
+            except:
+                return None
         
+    def set_alarm_to_store(self,id,alarm):
+        if id == "1":
+            self.store.put("alarms",a1=alarm)
+        elif id=="2":
+            self.store.put("alarms",a2=alarm)
+        elif id=="3":
+            self.store.put("alarms",a3=alarm)
+        elif id=="4":
+            self.store.put("alarms",a4=alarm)
+
     
 app = ClockApp()
     

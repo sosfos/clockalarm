@@ -63,27 +63,27 @@
 
 
 <ClockWidget>:
-    alarm_1:_a1
-    alarm_2:_a2
-    alarm_3:_a3
-    alarm_4:_a4
+    alarm_1:a1
+    alarm_2:a2
+    alarm_3:a3
+    alarm_4:a4
     clock:_clock
     
     opacity:0.3
     AlarmLeft:
-        id:_a1
+        id:a1
         x:0
         y:root.height - self.height
     AlarmLeft:
-        id:_a2
+        id:a2
         x:0
         y:0
     AlarmRight:
-        id:_a3
+        id:a3
         x:root.width - self.width
         y:root.height - self.height
     AlarmRight:
-        id:_a4
+        id:a4
         x:root.width - self.width
         y:0
     
@@ -124,4 +124,11 @@
             text:'OK'
             on_press:root.button_ok_down()
         
-        
+<PopupMessage>:
+    opacity:0
+    size_hint:.8,None
+    height:80
+    text:''
+    x:(app.root.width - self.width)/2
+    y:0
+    

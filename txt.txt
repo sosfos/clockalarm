@@ -27,6 +27,7 @@ Start --> splash screen --> main screen
 	       "alarms":
 	       {"1":
     	       {
+    	       "enable":1
     	       "time":None,
     	       "snooze":300,
                "volumes":[],
