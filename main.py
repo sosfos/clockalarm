@@ -12,9 +12,10 @@ from kivy.uix.textinput import TextInput
 from kivy.animation import Animation
 from kivy.properties import ObjectProperty
 from kivy.storage.jsonstore import JsonStore
-from kivy.garden.circulardatetimepicker import CircularTimePicker
+from picker import CircularTimePicker
 from kivy.uix.button import Button
 from datetime import datetime
+import time
 
 app = None
 
@@ -23,7 +24,7 @@ class AlarmWidget(BoxLayout):
     
     def __init__(self,**kwargs):
         super(AlarmWidget,self).__init__(**kwargs)
-        self.alarm = SoundLoader.load('3.mp3')
+        self.alarm = SoundLoader.load('3.wav')
         self.alarm.loop = True
         
         self.animation_fade_out = Animation(opacity=0,duration=4)
@@ -41,6 +42,8 @@ class AlarmWidget(BoxLayout):
         self.enabled = False
         
         self.stopped = True
+    
+        self.touch_down_time = 0
         
     def on_alarm_time(self,instance,value):
         self.alarm_label.label.text = value.strftime('%H:%M') if self.enabled else "__:__"
@@ -80,10 +83,18 @@ class AlarmWidget(BoxLayout):
             
             #when alarm finished, change current_alarm of root widget to None
         
-    def stop(self):
+    def stop(self,newScheduleTime):
         print "alarm stopped:{}".format(datetime.now().strftime("%H:%M"))
         self.alarm.stop()
         self.stopped = True
+        
+        if newScheduleTime > 0:
+            Clock.schedule_once(self.alarm_now,newScheduleTime)
+        elif newScheduleTime == 0:
+            schedule_alarm()
+        elif newScheduleTime < 0:
+            pass
+
         
     def schedule_alarm(self):
         if self.alarm_time is not None and self.enabled:
@@ -98,6 +109,16 @@ class AlarmWidget(BoxLayout):
             delta += (self.alarm_time.minute - now.minute) * 60
 
             Clock.schedule_once(self.alarm_now,delta)
+
+    def on_touch_down(self,event):
+        self.touch_down_time = time.time()
+
+    def on_touch_up(self,event):
+        now = time.time()
+        if now - self.touch_down_time > 4:
+            self.stop(0)
+            self.in_snooze = False
+
 
 class NowWidget(Label):
     def __init__(self,**kwargs):
@@ -204,16 +225,9 @@ class ClockWidget(RelativeLayout):
                 self.alarm_fade_clock = Clock.schedule_once(self.fade_out_alarms,10)   
                 self.fade_clock = Clock.schedule_once(self.fade_out_self,180)
             elif not self.current_alarm.stopped:
-                if event.is_triple_tap:
-                    print "stop..."
-                    #TODO: never get here as always go to snooze
-                    self.current_alarm.in_snooze = False
-                    self.current_alarm.stop()
-                else:
-                    print "snooze..."
-                    self.current_alarm.in_snooze = True
-                    self.current_alarm.stop()
-                    Clock.schedule_once(self.current_alarm.alarm_now,300)
+                print "snooze..."
+                self.current_alarm.in_snooze = True
+                self.current_alarm.stop(300)
     
     def hide_alarm_clock(self):                    
         self.clock.opacity = 0
